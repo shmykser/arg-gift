@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загадка 11</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Загадка 11</h1>
+        <p id="instruction">Нажми кнопку, чтобы разрешить доступ к датчикам, затем потряси смартфон.</p>
+        <button id="enableShake">Разрешить доступ к датчикам</button>
+        <p id="result"></p>
+    </div>
+    <script src="../js/script.js"></script>
+    <script>
+        // Функция для обработки "тряски"
+        function handleShake() {
+            document.getElementById("result").textContent = "Молодец! Переходи к следующей загадке.";
+            setTimeout(() => {
+                window.location.href = "riddle12.html"; // Переход на следующую загадку
+            }, 2000); // Задержка перед переходом
+        }
+
+        // Проверка, является ли устройство смартфоном
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Логика для смартфонов (Device Motion API)
+        if (isMobileDevice() && window.DeviceMotionEvent) {
+            let lastAcceleration = { x: null, y: null, z: null };
+
+            // Кнопка для запроса разрешения
+            document.getElementById("enableShake").addEventListener("click", () => {
+                // Запрашиваем разрешение на доступ к датчикам
+                if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                    DeviceMotionEvent.requestPermission()
+                        .then(permissionState => {
+                            if (permissionState === 'granted') {
+                                // Разрешение получено, начинаем отслеживать тряску
+                                window.addEventListener("devicemotion", (event) => {
+                                    const acceleration = event.accelerationIncludingGravity;
+
+                                    if (lastAcceleration.x === null) {
+                                        lastAcceleration = {
+                                            x: acceleration.x,
+                                            y: acceleration.y,
+                                            z: acceleration.z,
+                                        };
+                                        return;
+                                    }
+
+                                    const deltaX = Math.abs(acceleration.x - lastAcceleration.x);
+                                    const deltaY = Math.abs(acceleration.y - lastAcceleration.y);
+                                    const deltaZ = Math.abs(acceleration.z - lastAcceleration.z);
+
+                                    const threshold = 20; // Порог чувствительности
+                                    if (deltaX > threshold || deltaY > threshold || deltaZ > threshold) {
+                                        handleShake();
+                                    }
+
+                                    lastAcceleration = {
+                                        x: acceleration.x,
+                                        y: acceleration.y,
+                                        z: acceleration.z,
+                                    };
+                                });
+
+                                document.getElementById("instruction").textContent = "Теперь потряси смартфон!";
+                            } else {
+                                document.getElementById("result").textContent = "Доступ к датчикам отклонён.";
+                            }
+                        })
+                        .catch(console.error);
+                } else {
+                    // Для устройств, где разрешение не требуется
+                    window.addEventListener("devicemotion", (event) => {
+                        const acceleration = event.accelerationIncludingGravity;
+
+                        if (lastAcceleration.x === null) {
+                            lastAcceleration = {
+                                x: acceleration.x,
+                                y: acceleration.y,
+                                z: acceleration.z,
+                            };
+                            return;
+                        }
+
+                        const deltaX = Math.abs(acceleration.x - lastAcceleration.x);
+                        const deltaY = Math.abs(acceleration.y - lastAcceleration.y);
+                        const deltaZ = Math.abs(acceleration.z - lastAcceleration.z);
+
+                        const threshold = 20; // Порог чувствительности
+                        if (deltaX > threshold || deltaY > threshold || deltaZ > threshold) {
+                            handleShake();
+                        }
+
+                        lastAcceleration = {
+                            x: acceleration.x,
+                            y: acceleration.y,
+                            z: acceleration.z,
+                        };
+                    });
+
+                    document.getElementById("instruction").textContent = "Теперь потряси смартфон!";
+                }
+            });
+        } 
+        // Логика для ноутбуков (движение мыши)
+        else {
+            let lastMousePosition = { x: null, y: null };
+            let shakeCount = 0;
+            let shakeTimeout = null;
+
+            window.addEventListener("mousemove", (event) => {
+                const currentX = event.clientX;
+                const currentY = event.clientY;
+
+                if (lastMousePosition.x !== null && lastMousePosition.y !== null) {
+                    const deltaX = Math.abs(currentX - lastMousePosition.x);
+                    const deltaY = Math.abs(currentY - lastMousePosition.y);
+
+                    // Если движение мыши быстрое
+                    const threshold = 100; // Увеличили порог для мыши
+                    if (deltaX > threshold || deltaY > threshold) {
+                        shakeCount++;
+                        if (shakeCount >= 3) { // Нужно 3 быстрых движения
+                            handleShake();
+                            shakeCount = 0; // Сброс счётчика
+                        }
+
+                        // Сброс счётчика, если движения прекратились
+                        if (shakeTimeout) clearTimeout(shakeTimeout);
+                        shakeTimeout = setTimeout(() => {
+                            shakeCount = 0;
+                        }, 500); // Сброс через 500 мс
+                    }
+                }
+
+                lastMousePosition = { x: currentX, y: currentY };
+            });
+
+            document.getElementById("instruction").textContent = "Быстро подвигай мышью, чтобы увидеть подсказку.";
+            document.getElementById("enableShake").style.display = "none"; // Скрываем кнопку на ноутбуке
+        }
+    </script>
+</body>
+</html>
